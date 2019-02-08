@@ -105,10 +105,19 @@ void inline ws2812_sendarray_mask(uint8_t *data,uint16_t datlen,uint8_t maskhi)
   uint8_t curbyte,ctr,masklo;
   uint8_t sreg_prev;
   
+  #ifdef ws2812_Attiny1
+  ws2812_PORTREG.DIR |= maskhi; // Enable output
+  #else
   ws2812_DDRREG |= maskhi; // Enable output
+  #endif
   
+  #ifdef ws2812_Attiny1
+  masklo	=~maskhi&ws2812_PORTREG.OUT;
+  maskhi |=        ws2812_PORTREG.OUT;
+  #else
   masklo	=~maskhi&ws2812_PORTREG;
-  maskhi |=        ws2812_PORTREG;
+  maskhi |=        ws2812_PORTREG;  
+  #endif
   
   sreg_prev=SREG;
   cli();  
@@ -173,7 +182,11 @@ w_nop16
     "       dec   %0    \n\t"    //  '1' [+2] '0' [+2]
     "       brne  loop%=\n\t"    //  '1' [+3] '0' [+4]
     :	"=&d" (ctr)
-    :	"r" (curbyte), "I" (_SFR_IO_ADDR(ws2812_PORTREG)), "r" (maskhi), "r" (masklo)
+	#ifdef ws2812_Attiny1
+    :	"r" (curbyte), "I" (_SFR_IO_ADDR(ws2812_PORTREG.OUT)), "r" (maskhi), "r" (masklo)
+	#else
+	:	"r" (curbyte), "I" (_SFR_IO_ADDR(ws2812_PORTREG)), "r" (maskhi), "r" (masklo)
+	#endif
     );
   }
   
